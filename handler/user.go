@@ -59,6 +59,7 @@ func CreateUser(c *fiber.Ctx) error {
 	type NewUser struct {
 		Username string `json:"username"`
 		Email    string `json:"email"`
+		Name     string `json:"name"`
 	}
 
 	db := database.DB
@@ -85,6 +86,7 @@ func CreateUser(c *fiber.Ctx) error {
 	newUser := NewUser{
 		Email:    user.Email,
 		Username: user.Username,
+		Name:     user.Name,
 	}
 
 	return c.JSON(fiber.Map{"status": "success", "message": "Created user", "data": newUser})
@@ -96,7 +98,7 @@ func UpdateUser(c *fiber.Ctx) error {
 		Username string `json:"username" validate:"omitempty,min=3,max=50"`
 		Email    string `json:"email" validate:"omitempty,email"`
 		Password string `json:"password" validate:"omitempty,min=6,max=50"`
-		Names    string `json:"names"`
+		Name     string `json:"name" validate:"omitempty,min=3,max=50"`
 	}
 
 	var uui UpdateUserInput
@@ -160,8 +162,8 @@ func UpdateUser(c *fiber.Ctx) error {
 		}
 		user.Password = hashedPassword
 	}
-	if uui.Names != "" {
-		user.Names = uui.Names
+	if uui.Name != "" {
+		user.Name = uui.Name
 	}
 
 	// Save changes
