@@ -27,22 +27,10 @@ func CheckPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// func getUserByEmail(e string) (*model.User, error) {
-// 	db := database.DB
-// 	var user model.User
-// 	if err := db.Where(&model.User{Email: e}).First(&user).Error; err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	return &user, nil
-// }
-
-func getUserByUsername(u string) (*model.User, error) {
+func getUserByEmail(e string) (*model.User, error) {
 	db := database.DB
 	var user model.User
-	if err := db.Where(&model.User{Username: u}).First(&user).Error; err != nil {
+	if err := db.Where(&model.User{Email: e}).First(&user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
@@ -51,10 +39,22 @@ func getUserByUsername(u string) (*model.User, error) {
 	return &user, nil
 }
 
+// func getUserByUsername(u string) (*model.User, error) {
+// 	db := database.DB
+// 	var user model.User
+// 	if err := db.Where(&model.User{Username: u}).First(&user).Error; err != nil {
+// 		if errors.Is(err, gorm.ErrRecordNotFound) {
+// 			return nil, nil
+// 		}
+// 		return nil, err
+// 	}
+// 	return &user, nil
+// }
+
 // Login get user and password
 func Login(c *fiber.Ctx) error {
 	type LoginInput struct {
-		Username string `json:"username" validate:"required"`
+		Email    string `json:"email" validate:"required"`
 		Password string `json:"password" validate:"required"`
 	}
 	type UserData struct {
@@ -64,24 +64,23 @@ func Login(c *fiber.Ctx) error {
 		Password string `json:"password"`
 	}
 
-	
 	input := new(LoginInput)
 	var ud UserData
-	
+
 	if err := c.BodyParser(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"status": "error", "message": "Error on login request", "errors": err.Error()})
 	}
-	
+
 	validate := validator.New()
 	if err := validate.Struct(input); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"message": "Invalid request body", "errors": err.Error()})
 	}
 
-	username := input.Username
+	email := input.Email
 	pass := input.Password
 	userModel, err := new(model.User), *new(error)
 
-	userModel, err = getUserByUsername(username)
+	userModel, err = getUserByEmail(email)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"status": "error", "message": "Internal Server Error", "data": err})
