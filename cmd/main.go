@@ -18,11 +18,12 @@ func main() {
 		ServerHeader:  "Fiber",
 		AppName:       "App Name",
 	})
-	
+
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000",       // Allow requests from the frontend
-		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS", // Allow these HTTP methods
-		AllowHeaders: "Content-Type, Authorization", // Allow these headers
+		AllowOrigins:     "http://localhost:3000",
+		AllowCredentials: true,
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 	}))
 
 	database.ConnectDB()

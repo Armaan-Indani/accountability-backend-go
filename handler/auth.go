@@ -2,7 +2,7 @@ package handler
 
 import (
 	"errors"
-	"log"
+	// "log"
 
 	// "net/mail"
 	"time"
@@ -22,8 +22,8 @@ import (
 // CheckPasswordHash compare password with hash
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	log.Println(hash, string(hashedPassword), "haaaash")
+	// hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	// log.Println(hash, string(hashedPassword), "haaaash")
 	return err == nil
 }
 
