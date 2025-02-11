@@ -37,6 +37,7 @@ func SetupRoutes(app *fiber.App) {
 	task.Get("/", middleware.Protected(), handler.GetListsForUser)
 	task.Post("/", middleware.Protected(), handler.CreateList)
 	task.Patch("/:list_id", middleware.Protected(), handler.UpdateListName)
+	task.Delete("/:list_id", middleware.Protected(), handler.DeleteList)
 
 	task.Post("/:list_id", middleware.Protected(), handler.AddTaskToList)
 }

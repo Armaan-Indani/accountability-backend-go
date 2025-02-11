@@ -1,1 +1,61 @@
+# Binary files
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
+
+# Go build artifacts
+bin/
+pkg/
+*.test
+
+# Go modules and cache
+go.sum
+go.work
+go.work.sum
+vendor/
+*.mod
+
+# Logs and debug files
+*.log
+*.pid
+*.seed
+*.state
+trace.out
+heap.out
+cpu.out
+
+# Environment files
 .env
+.env.*
+config.yaml
+config.json
+
+# IDE and editor configurations
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.bak
+
+# Node-related (if using a frontend in the same repo)
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnp/
+.pnp.js
+
+# Docker-related
+docker-compose.override.yml
+.dockerignore
+
+# Git-related
+*.orig
+*.rej
+
+# Temporary files
+.DS_Store
+Thumbs.db
+tmp/

@@ -3,6 +3,8 @@ package handler
 import (
 	"app/database"
 	"app/model"
+	"fmt"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -251,3 +253,75 @@ func GetListsForUser(c *fiber.Ctx) error {
 		"data":    lists,
 	})
 }
+
+func DeleteList(c *fiber.Ctx) error {
+	// Get the list ID from URL parameters
+	idStr := c.Params("list_id")
+
+	fmt.Println(idStr)
+	if idStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid or missing task list ID",
+			"data":    nil,
+		})
+	}
+
+	// Convert id to uint
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid task list ID format",
+			"data":    nil,
+		})
+	}
+
+	// Get user ID from token
+	token := c.Locals("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID from token",
+			"data":    nil,
+		})
+	}
+
+	db := database.DB
+	var list model.TaskList
+
+	// Check if the list exists and belongs to the user
+	if err := db.First(&list, "id = ?", uint(id)).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "No task list found with the provided ID",
+			"errors":  err.Error(),
+		})
+	}
+
+	if list.UserID != uint(userID) {
+		return c.Status(403).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to delete this task list",
+			"data":    nil,
+		})
+	}
+
+	// Delete the task list
+	if err := db.Delete(&list).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Couldn't delete task list",
+			"errors":  err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Task list successfully deleted",
+		"data":    nil,
+	})
+}
+
