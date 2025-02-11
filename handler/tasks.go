@@ -4,6 +4,7 @@ import (
 	"app/database"
 	"app/model"
 	"fmt"
+	"gorm.io/gorm"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
@@ -239,7 +240,9 @@ func GetListsForUser(c *fiber.Ctx) error {
 	// Retrieve all lists for the user, including their tasks
 	db := database.DB
 	var lists []model.TaskList
-	if err := db.Preload("Tasks").Where("user_id = ?", uint(userID)).Find(&lists).Error; err != nil {
+	if err := db.Preload("Tasks", func(db *gorm.DB) *gorm.DB {
+		return db.Order("created_at ASC") // Orders tasks by ID in ascending order
+	}).Where("user_id = ?", uint(userID)).Find(&lists).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Couldn't retrieve lists",
@@ -325,3 +328,267 @@ func DeleteList(c *fiber.Ctx) error {
 	})
 }
 
+func DeleteTask(c *fiber.Ctx) error {
+	// Get the task ID from URL parameters
+	taskIDStr := c.Params("task_id")
+	if taskIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid or missing task ID",
+			"data":    nil,
+		})
+	}
+
+	// Convert task ID to uint
+	taskID, err := strconv.ParseUint(taskIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid task ID format",
+			"data":    nil,
+		})
+	}
+
+	// Get user ID from token
+	token := c.Locals("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID from token",
+			"data":    nil,
+		})
+	}
+
+	db := database.DB
+	var task model.Task
+
+	// Check if the task exists
+	if err := db.First(&task, "id = ?", uint(taskID)).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "No task found with the provided ID",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Retrieve the associated task list
+	var taskList model.TaskList
+	if err := db.First(&taskList, "id = ?", task.TaskListID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Task list not found",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Ensure the task belongs to a list owned by the logged-in user
+	if taskList.UserID != uint(userID) {
+		return c.Status(403).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to delete this task",
+			"data":    nil,
+		})
+	}
+
+	// Delete the task
+	if err := db.Delete(&task).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Couldn't delete task",
+			"errors":  err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Task successfully deleted",
+		"data":    nil,
+	})
+}
+
+func ToggleTask(c *fiber.Ctx) error {
+	// Get the task ID from URL parameters
+	taskIDStr := c.Params("task_id")
+	if taskIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid or missing task ID",
+			"data":    nil,
+		})
+	}
+
+	// Convert task ID to uint
+	taskID, err := strconv.ParseUint(taskIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid task ID format",
+			"data":    nil,
+		})
+	}
+
+	// Get user ID from token
+	token := c.Locals("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID from token",
+			"data":    nil,
+		})
+	}
+
+	db := database.DB
+	var task model.Task
+
+	// Check if the task exists
+	if err := db.First(&task, "id = ?", uint(taskID)).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "No task found with the provided ID",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Retrieve the associated task list
+	var taskList model.TaskList
+	if err := db.First(&taskList, "id = ?", task.TaskListID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Task list not found",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Ensure the task belongs to a list owned by the logged-in user
+	if taskList.UserID != uint(userID) {
+		return c.Status(403).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to update this task",
+			"data":    nil,
+		})
+	}
+
+	// Toggle the task's completed status
+	task.Completed = !task.Completed
+	if err := db.Save(&task).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Couldn't update task",
+			"errors":  err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Task marked as completed",
+		"data":    task,
+	})
+}
+
+func UpdateTask(c *fiber.Ctx) error {
+	type UpdateTaskInput struct {
+		Text string `json:"text" validate:"required,min=1"`
+	}
+
+	var input UpdateTaskInput
+	if err := c.BodyParser(&input); err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Review your input",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Validate input
+	validate := validator.New()
+	if err := validate.Struct(&input); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Validation failed",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Get the task ID from URL parameters
+	taskIDStr := c.Params("task_id")
+	if taskIDStr == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid or missing task ID",
+			"data":    nil,
+		})
+	}
+
+	// Convert task ID to uint
+	taskID, err := strconv.ParseUint(taskIDStr, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Invalid task ID format",
+			"data":    nil,
+		})
+	}
+
+	// Get user ID from token
+	token := c.Locals("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID from token",
+			"data":    nil,
+		})
+	}
+
+	db := database.DB
+	var task model.Task
+
+	// Check if the task exists
+	if err := db.First(&task, "id = ?", uint(taskID)).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "No task found with the provided ID",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Retrieve the associated task list
+	var taskList model.TaskList
+	if err := db.First(&taskList, "id = ?", task.TaskListID).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Task list not found",
+			"errors":  err.Error(),
+		})
+	}
+
+	// Ensure the task belongs to a list owned by the logged-in user
+	if taskList.UserID != uint(userID) {
+		return c.Status(403).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to update this task",
+			"data":    nil,
+		})
+	}
+
+	// Update the task name
+	task.Text = input.Text
+	if err := db.Save(&task).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Couldn't update task",
+			"errors":  err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Task name updated successfully",
+		"data":    task,
+	})
+}

@@ -32,12 +32,17 @@ func SetupRoutes(app *fiber.App) {
 	product.Post("/", middleware.Protected(), handler.CreateProduct)
 	product.Delete("/:id", middleware.Protected(), handler.DeleteProduct)
 
-	//Tasks
+	//TaskLists
+	taskList := api.Group("/tasklist")
+	taskList.Get("/", middleware.Protected(), handler.GetListsForUser)
+	taskList.Post("/", middleware.Protected(), handler.CreateList)
+	taskList.Patch("/:list_id", middleware.Protected(), handler.UpdateListName)
+	taskList.Delete("/:list_id", middleware.Protected(), handler.DeleteList)
+	
 	task := api.Group("/task")
-	task.Get("/", middleware.Protected(), handler.GetListsForUser)
-	task.Post("/", middleware.Protected(), handler.CreateList)
-	task.Patch("/:list_id", middleware.Protected(), handler.UpdateListName)
-	task.Delete("/:list_id", middleware.Protected(), handler.DeleteList)
-
 	task.Post("/:list_id", middleware.Protected(), handler.AddTaskToList)
+	task.Delete("/:task_id", middleware.Protected(), handler.DeleteTask)
+	task.Patch("/:task_id", middleware.Protected(), handler.UpdateTask)
+	task.Patch("/:task_id/toggle", middleware.Protected(), handler.ToggleTask)
+
 }
