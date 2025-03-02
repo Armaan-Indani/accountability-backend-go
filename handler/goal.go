@@ -255,27 +255,23 @@ func UpdateGoal(c *fiber.Ctx) error {
 	goal.Alignment = input.Alignment
 
 	// Clear existing subgoals and add new ones
-	if input.Subgoals != nil {
-		db.Where("goal_id = ?", goal.ID).Delete(&model.Subgoal{})
-		for _, subgoalName := range input.Subgoals {
-			goal.Subgoals = append(goal.Subgoals, model.Subgoal{
-				GoalID:    goal.ID,
-				Name:      subgoalName,
-				Completed: false,
-			})
-		}
+	db.Where("goal_id = ?", goal.ID).Delete(&model.Subgoal{})
+	for _, subgoalName := range input.Subgoals {
+		goal.Subgoals = append(goal.Subgoals, model.Subgoal{
+			GoalID:    goal.ID,
+			Name:      subgoalName,
+			Completed: false,
+		})
 	}
 
 	// Clear existing habits and add new ones
-	if input.Habits != nil {
-		db.Where("goal_id = ?", goal.ID).Delete(&model.Habit{})
-		for _, habit := range input.Habits {
-			goal.Habits = append(goal.Habits, model.Habit{
-				GoalID:    goal.ID,
-				Name:      habit.Name,
-				Frequency: habit.Frequency,
-			})
-		}
+	db.Where("goal_id = ?", goal.ID).Delete(&model.Habit{})
+	for _, habit := range input.Habits {
+		goal.Habits = append(goal.Habits, model.Habit{
+			GoalID:    goal.ID,
+			Name:      habit.Name,
+			Frequency: habit.Frequency,
+		})
 	}
 
 	// Save changes
