@@ -97,7 +97,7 @@ func UpdateListName(c *fiber.Ctx) error {
 	// Get the list ID from the route parameter
 	listID := c.Params("list_id")
 
-	// Get user ID from token (assume user ID is stored in the token)
+	// Get user ID from token
 	token := c.Locals("user").(*jwt.Token)
 	claims := token.Claims.(jwt.MapClaims)
 	userID, ok := claims["user_id"].(float64)

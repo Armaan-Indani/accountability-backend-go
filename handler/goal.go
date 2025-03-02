@@ -131,12 +131,24 @@ func GetGoals(c *fiber.Ctx) error {
 }
 
 func DeleteGoal(c *fiber.Ctx) error {
-	id := c.Params("goal_id")
+	goal_id := c.Params("goal_id")
 
-	if id == "" {
+	if goal_id == "" {
 		return c.Status(400).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Goal ID is required",
+		})
+	}
+
+	// Get user ID from token
+	token := c.Locals("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID from token",
+			"data":    nil,
 		})
 	}
 
@@ -144,10 +156,19 @@ func DeleteGoal(c *fiber.Ctx) error {
 	var goal model.Goal
 
 	// Find the goal first
-	if err := db.First(&goal, id).Error; err != nil {
+	if err := db.First(&goal, goal_id).Error; err != nil {
 		return c.Status(404).JSON(fiber.Map{
 			"status":  "error",
 			"message": "Goal not found",
+		})
+	}
+
+	// Check if the goal belongs to the user
+	if goal.UserID != uint(userID) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to delete this goal",
+			"data":    nil,
 		})
 	}
 
@@ -167,7 +188,19 @@ func DeleteGoal(c *fiber.Ctx) error {
 }
 
 func UpdateGoal(c *fiber.Ctx) error {
-	id := c.Params("id")
+	id := c.Params("goal_id")
+
+	// Get user ID from token
+	token := c.Locals("user").(*jwt.Token)
+	claims := token.Claims.(jwt.MapClaims)
+	userID, ok := claims["user_id"].(float64)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID from token",
+			"data":    nil,
+		})
+	}
 
 	var goal model.Goal
 	db := database.DB
@@ -178,13 +211,22 @@ func UpdateGoal(c *fiber.Ctx) error {
 		})
 	}
 
+	// Check if the goal belongs to the user
+	if goal.UserID != uint(userID) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to update this goal",
+			"data":    nil,
+		})
+	}
+
 	type HabitInput struct {
 		Name      string `json:"name"`
 		Frequency string `json:"frequency"`
 	}
 
 	type UpdateGoalInput struct {
-		Name        string       `json:"name"`
+		Name        string       `json:"name" validate:"required,min=1"`
 		Deadline    time.Time    `json:"deadline"`
 		Description string       `json:"description"`
 		What        string       `json:"what"`
@@ -204,28 +246,13 @@ func UpdateGoal(c *fiber.Ctx) error {
 		})
 	}
 
-	// Update fields if provided
-	if input.Name != "" {
-		goal.Name = input.Name
-	}
-	if !input.Deadline.IsZero() {
-		goal.Deadline = input.Deadline
-	}
-	if input.Description != "" {
-		goal.Description = input.Description
-	}
-	if input.What != "" {
-		goal.What = input.What
-	}
-	if input.HowMuch != "" {
-		goal.HowMuch = input.HowMuch
-	}
-	if input.Resources != "" {
-		goal.Resources = input.Resources
-	}
-	if input.Alignment != "" {
-		goal.Alignment = input.Alignment
-	}
+	goal.Name = input.Name
+	goal.Deadline = input.Deadline
+	goal.Description = input.Description
+	goal.What = input.What
+	goal.HowMuch = input.HowMuch
+	goal.Resources = input.Resources
+	goal.Alignment = input.Alignment
 
 	// Clear existing subgoals and add new ones
 	if input.Subgoals != nil {
