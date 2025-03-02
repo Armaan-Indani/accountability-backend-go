@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func CreateList(c *fiber.Ctx) error {
@@ -36,15 +35,11 @@ func CreateList(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get user ID from token (assume user ID is stored in the token)
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -97,15 +92,11 @@ func UpdateListName(c *fiber.Ctx) error {
 	// Get the list ID from the route parameter
 	listID := c.Params("list_id")
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -172,14 +163,11 @@ func AddTaskToList(c *fiber.Ctx) error {
 	// Get the list ID from the route parameter
 	listID := c.Params("list_id")
 
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -225,15 +213,11 @@ func AddTaskToList(c *fiber.Ctx) error {
 }
 
 func GetListsForUser(c *fiber.Ctx) error {
-	// Get user ID from token (assume user ID is stored in the token)
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -280,15 +264,11 @@ func DeleteList(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -349,15 +329,11 @@ func DeleteTask(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -429,15 +405,11 @@ func ToggleTask(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -533,15 +505,11 @@ func UpdateTask(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 

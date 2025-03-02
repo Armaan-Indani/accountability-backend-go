@@ -45,7 +45,7 @@ func jwtSuccessHandler(c *fiber.Ctx) error {
 
 	// Extracting userID from JWT payload
 	if userID, exists := claims["user_id"].(float64); exists {
-		c.Locals("userID", int(userID)) // Store in Fiber context
+		c.Locals("userID", uint(userID)) // Store in Fiber context
 	} else {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",

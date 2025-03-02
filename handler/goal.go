@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func CreateGoal(c *fiber.Ctx) error {
@@ -45,13 +44,11 @@ func CreateGoal(c *fiber.Ctx) error {
 		})
 	}
 
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -103,13 +100,11 @@ func CreateGoal(c *fiber.Ctx) error {
 }
 
 func GetGoals(c *fiber.Ctx) error {
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -140,15 +135,11 @@ func DeleteGoal(c *fiber.Ctx) error {
 		})
 	}
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 
@@ -190,15 +181,11 @@ func DeleteGoal(c *fiber.Ctx) error {
 func UpdateGoal(c *fiber.Ctx) error {
 	id := c.Params("goal_id")
 
-	// Get user ID from token
-	token := c.Locals("user").(*jwt.Token)
-	claims := token.Claims.(jwt.MapClaims)
-	userID, ok := claims["user_id"].(float64)
+	userID, ok := c.Locals("userID").(uint)
 	if !ok {
 		return c.Status(500).JSON(fiber.Map{
 			"status":  "error",
-			"message": "Failed to retrieve user ID from token",
-			"data":    nil,
+			"message": "Failed to retrieve user ID",
 		})
 	}
 

@@ -22,8 +22,6 @@ import (
 // CheckPasswordHash compare password with hash
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
-	// hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	// log.Println(hash, string(hashedPassword), "haaaash")
 	return err == nil
 }
 
@@ -38,18 +36,6 @@ func getUserByEmail(e string) (*model.User, error) {
 	}
 	return &user, nil
 }
-
-// func getUserByUsername(u string) (*model.User, error) {
-// 	db := database.DB
-// 	var user model.User
-// 	if err := db.Where(&model.User{Username: u}).First(&user).Error; err != nil {
-// 		if errors.Is(err, gorm.ErrRecordNotFound) {
-// 			return nil, nil
-// 		}
-// 		return nil, err
-// 	}
-// 	return &user, nil
-// }
 
 // Login get user and password
 func Login(c *fiber.Ctx) error {
