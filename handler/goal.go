@@ -14,16 +14,20 @@ func CreateGoal(c *fiber.Ctx) error {
 		Name      string `json:"name"`
 		Frequency string `json:"frequency"`
 	}
+	type SubgoalInput struct {
+		Name      string `json:"name"`
+		Completed bool   `json:"completed"`
+	}
 	type CreateGoalInput struct {
-		Name        string       `json:"name" validate:"required,min=1"`
-		Deadline    time.Time    `json:"deadline"`
-		Description string       `json:"description"`
-		What        string       `json:"what"`
-		HowMuch     string       `json:"how_much"`
-		Resources   string       `json:"resources"`
-		Alignment   string       `json:"alignment"`
-		Subgoals    []string     `json:"subgoals"` // List of subgoal names
-		Habits      []HabitInput `json:"habits"`   // List of habits with names and frequency
+		Name        string         `json:"name" validate:"required,min=1"`
+		Deadline    time.Time      `json:"deadline"`
+		Description string         `json:"description"`
+		What        string         `json:"what"`
+		HowMuch     string         `json:"how_much"`
+		Resources   string         `json:"resources"`
+		Alignment   string         `json:"alignment"`
+		Subgoals    []SubgoalInput `json:"subgoals"` // List of subgoal names
+		Habits      []HabitInput   `json:"habits"`   // List of habits with names and frequency
 	}
 
 	var input CreateGoalInput
@@ -68,10 +72,10 @@ func CreateGoal(c *fiber.Ctx) error {
 	}
 
 	// Add subgoals
-	for _, subgoalName := range input.Subgoals {
+	for _, subgoal := range input.Subgoals {
 		goal.Subgoals = append(goal.Subgoals, model.Subgoal{
-			Name:      subgoalName,
-			Completed: false,
+			Name:      subgoal.Name,
+			Completed: subgoal.Completed,
 		})
 	}
 
@@ -212,16 +216,23 @@ func UpdateGoal(c *fiber.Ctx) error {
 		Frequency string `json:"frequency"`
 	}
 
+	//TODO: Add deadline to subgoals
+
+	type SubgoalInput struct {
+		Name      string `json:"name"`
+		Completed bool   `json:"completed"`
+	}
+
 	type UpdateGoalInput struct {
-		Name        string       `json:"name" validate:"required,min=1"`
-		Deadline    time.Time    `json:"deadline"`
-		Description string       `json:"description"`
-		What        string       `json:"what"`
-		HowMuch     string       `json:"how_much"`
-		Resources   string       `json:"resources"`
-		Alignment   string       `json:"alignment"`
-		Subgoals    []string     `json:"subgoals"` // List of subgoal names
-		Habits      []HabitInput `json:"habits"`   // List of habits with names and frequency
+		Name        string         `json:"name" validate:"required,min=1"`
+		Deadline    time.Time      `json:"deadline"`
+		Description string         `json:"description"`
+		What        string         `json:"what"`
+		HowMuch     string         `json:"how_much"`
+		Resources   string         `json:"resources"`
+		Alignment   string         `json:"alignment"`
+		Subgoals    []SubgoalInput `json:"subgoals"` // List of subgoal names
+		Habits      []HabitInput   `json:"habits"`   // List of habits with names and frequency
 	}
 
 	var input UpdateGoalInput
@@ -243,11 +254,11 @@ func UpdateGoal(c *fiber.Ctx) error {
 
 	// Clear existing subgoals and add new ones
 	db.Where("goal_id = ?", goal.ID).Delete(&model.Subgoal{})
-	for _, subgoalName := range input.Subgoals {
+	for _, subgoal := range input.Subgoals {
 		goal.Subgoals = append(goal.Subgoals, model.Subgoal{
 			GoalID:    goal.ID,
-			Name:      subgoalName,
-			Completed: false,
+			Name:      subgoal.Name,
+			Completed: subgoal.Completed,
 		})
 	}
 
