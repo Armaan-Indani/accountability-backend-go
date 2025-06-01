@@ -254,6 +254,7 @@ func UpdateGoal(c *fiber.Ctx) error {
 
 	// Clear existing subgoals and add new ones
 	db.Where("goal_id = ?", goal.ID).Delete(&model.Subgoal{})
+	goal.Subgoals = []model.Subgoal{} // Reset the subgoals slice
 	for _, subgoal := range input.Subgoals {
 		goal.Subgoals = append(goal.Subgoals, model.Subgoal{
 			GoalID:    goal.ID,
@@ -264,6 +265,7 @@ func UpdateGoal(c *fiber.Ctx) error {
 
 	// Clear existing habits and add new ones
 	db.Where("goal_id = ?", goal.ID).Delete(&model.Habit{})
+	goal.Habits = []model.Habit{} // Reset the habits slice
 	for _, habit := range input.Habits {
 		goal.Habits = append(goal.Habits, model.Habit{
 			GoalID:    goal.ID,
@@ -313,5 +315,70 @@ func ToggleGoalCompletedStatus(c *fiber.Ctx) error {
 		"status":  "success",
 		"message": "Goal completed status toggled",
 		"data":    goal,
+	})
+}
+
+func ToggleSubgoalCompletedStatus(c *fiber.Ctx) error {
+	goal_id := c.Params("goal_id")
+	subgoal_id := c.Params("subgoal_id")
+	if goal_id == "" || subgoal_id == "" {
+		return c.Status(400).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Goal ID and Subgoal ID are required",
+		})
+	}
+
+	userID, ok := c.Locals("userID").(uint)
+	if !ok {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Failed to retrieve user ID",
+		})
+	}
+
+	db := database.DB
+
+	// First verify the goal exists and belongs to the user
+	var goal model.Goal
+	if err := db.First(&goal, goal_id).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Goal not found",
+		})
+	}
+
+	// Check if the goal belongs to the user
+	if goal.UserID != uint(userID) {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"status":  "error",
+			"message": "You are not authorized to modify this goal's subgoals",
+		})
+	}
+
+	// Find and update the subgoal
+	var subgoal model.Subgoal
+	if err := db.Where("goal_id = ? AND id = ?", goal_id, subgoal_id).First(&subgoal).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Subgoal not found",
+		})
+	}
+
+	// Toggle the completed status
+	subgoal.Completed = !subgoal.Completed
+
+	// Save the updated subgoal
+	if err := db.Save(&subgoal).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"status":  "error",
+			"message": "Couldn't update subgoal status",
+			"errors":  err.Error(),
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"status":  "success",
+		"message": "Subgoal status toggled successfully",
+		"data":    subgoal,
 	})
 }

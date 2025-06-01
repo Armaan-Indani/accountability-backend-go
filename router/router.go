@@ -37,6 +37,7 @@ func SetupRoutes(app *fiber.App) {
 	task := api.Group("/task")
 	task.Post("/:list_id", middleware.Protected(), handler.AddTaskToList)
 	task.Delete("/:task_id", middleware.Protected(), handler.DeleteTask)
+	// TODO: Change to PUT - backend and frontend
 	task.Patch("/:task_id", middleware.Protected(), handler.UpdateTask)
 	task.Patch("/:task_id/toggle", middleware.Protected(), handler.ToggleTask)
 
@@ -44,7 +45,8 @@ func SetupRoutes(app *fiber.App) {
 	goal := api.Group("/goal")
 	goal.Post("/", middleware.Protected(), handler.CreateGoal)
 	goal.Get("/", middleware.Protected(), handler.GetGoals)
-	goal.Patch("/:goal_id", middleware.Protected(), handler.UpdateGoal)
+	goal.Put("/:goal_id", middleware.Protected(), handler.UpdateGoal)
 	goal.Delete("/:goal_id", middleware.Protected(), handler.DeleteGoal)
 	goal.Patch("/:goal_id/toggle", middleware.Protected(), handler.ToggleGoalCompletedStatus)
+	goal.Patch("/:goal_id/:subgoal_id/toggle", middleware.Protected(), handler.ToggleSubgoalCompletedStatus)
 }
