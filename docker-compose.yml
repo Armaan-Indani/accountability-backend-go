@@ -5,9 +5,10 @@ services:
       - .env
     ports:
       - 5000:5000
-    volumes:
-      - .:/usr/src/some-api
-    command: air cmd/main.go -b 0.0.0.0
+    depends_on:
+      - db
+    command: ./main
+
   db:
     image: postgres:alpine
     environment:

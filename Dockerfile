@@ -1,16 +1,30 @@
-FROM golang:1.23.4@sha256:7ea4c9dcb2b97ff8ee80a67db3d44f98c8ffa0d191399197007d8459c1453041
+# --- Build stage ---
+FROM golang:1.23-alpine AS builder
 
-# Enviroment variable
-WORKDIR /usr/src/some-api
+# Set working directory
+WORKDIR /app
 
-RUN go install github.com/air-verse/air@latest
+# Copy go mod files and download dependencies
+COPY go.mod go.sum ./
+RUN go mod download
 
-#Copying files to work directory
-COPY go.mod ./
-RUN go mod download && go mod verify
+# Copy rest of the application
 COPY . .
 
-# Run and expose the server on port 5000
+# Build the Go binary
+RUN CGO_ENABLED=0 GOOS=linux go build -o main .
+
+# --- Runtime stage ---
+FROM alpine:3.18
+
+# Set working directory
+WORKDIR /app
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/main .
+
+# Expose the port your app listens on
 EXPOSE 5000
 
-# CMD [ "nodemon", "build/app.js" ]
+# Run the binary
+CMD ["./main"]
