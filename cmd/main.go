@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"app/database"
 	"app/router"
@@ -11,8 +12,11 @@ import (
 )
 
 func main() {
+	// Connect to database first, before creating multiple processes
+	database.ConnectDB()
+
 	app := fiber.New(fiber.Config{
-		Prefork:       true,
+		Prefork:       false, // Disable prefork in Docker environment
 		CaseSensitive: true,
 		StrictRouting: true,
 		ServerHeader:  "Fiber",
@@ -26,8 +30,12 @@ func main() {
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 	}))
 
-	database.ConnectDB()
-
 	router.SetupRoutes(app)
-	log.Fatal(app.Listen(":5000"))
+	
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "5000"
+	}
+	
+	log.Fatal(app.Listen(":" + port))
 }

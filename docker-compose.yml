@@ -1,24 +1,51 @@
 services:
-  web:
-    build: .
-    env_file:
-      - .env
-    ports:
-      - 5000:5000
-    depends_on:
-      - db
-    command: ./main
-
+  # PostgreSQL Database
   db:
-    image: postgres:alpine
+    image: postgres:15-alpine
+    container_name: accountability_postgres
     environment:
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=${DB_NAME}
+      POSTGRES_DB: accountability_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - ${DB_PORT}:${DB_PORT}
+      - "5432:5432"
     volumes:
-      - postgres-db:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - accountability_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Go Fiber Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: accountability_backend
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password123
+      - DB_NAME=accountability_db
+      - JWT_SECRET=your-jwt-secret-key-here
+      - PORT=5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - accountability_network
+    restart: unless-stopped
 
 volumes:
-  postgres-db:
+  postgres_data:
+
+networks:
+  accountability_network:
+    driver: bridge
